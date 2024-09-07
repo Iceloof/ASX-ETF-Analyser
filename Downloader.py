@@ -27,10 +27,16 @@ class Downloader(QObject):
         try:
             start = str(start)
             end = str(end)
-            url = 'https://query1.finance.yahoo.com/v7/finance/download/'+code+'?period1='+start+'&period2='+end+'&interval=1d&events=history'
+            url = 'https://query1.finance.yahoo.com/v8/finance/chart/'+code+'?interval=1d&period1='+start+'&period2='+end
             res = requests.get(url, headers={'Connection': 'keep-alive',
     'Pragma': 'no-cache', 'Cache-Control': 'no-cache','User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.129 Safari/537.36','Accept': '*/*', 'Accept-Language': 'en-US,en;q=0.9,zh-CN;q=0.8,zh;q=0.7'})
-            df = pd.read_csv(StringIO(res.text), sep=",")
+            data = res.json()
+            data1 = {
+                'Date': [dt.utcfromtimestamp(ts).strftime('%Y-%m-%d') for ts in data['chart']['result'][0]['timestamp']],
+                'Adj Close': data['chart']['result'][0]['indicators']['adjclose'][0]['adjclose'],
+                'Volume': data['chart']['result'][0]['indicators']['quote'][0]['volume']
+            }
+            df = pd.DataFrame(data1)
             for i in range(len(df)):
                 date = df.loc[i,'Date']
                 close = f"{df.loc[i,'Adj Close']:.4f}"
